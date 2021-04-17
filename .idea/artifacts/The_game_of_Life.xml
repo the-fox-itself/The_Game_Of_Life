@@ -1,0 +1,13 @@
+<component name="ArtifactManager">
+  <artifact name="The game of Life">
+    <output-path>$PROJECT_DIR$/out/artifacts/The_game_of_Life</output-path>
+    <root id="root">
+      <element id="archive" name="The game of Life.jar">
+        <element id="directory" name="META-INF">
+          <element id="file-copy" path="$PROJECT_DIR$/META-INF/MANIFEST.MF" />
+        </element>
+        <element id="module-output" name="The game of life" />
+      </element>
+    </root>
+  </artifact>
+</component>
