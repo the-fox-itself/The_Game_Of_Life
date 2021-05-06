@@ -4,9 +4,11 @@ import javax.swing.*;
 
 import java.awt.*;
 import java.awt.event.*;
-import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import static Libraries.Methods.*;
+import static Mechanic.Mechanic.start;
 
 public class MainVariables {
     //game laws
@@ -17,7 +19,6 @@ public class MainVariables {
     public static int speedMilliseconds = 200;
 
     public static int iterationForNextStep = 1;
-    public static int iterationForMove = 1;
     public static int numOfNextSteps = 0;
 
     public static int cameraCenterCellX = 0;
@@ -33,13 +34,13 @@ public class MainVariables {
 
     public static boolean interfaceVisible = true;
     public static boolean started = false;
+    public static boolean iterationGoing = false;
 
-    public static ArrayList<int[]> listOfAliveCells = new ArrayList<>();
+    public static LinkedHashMap<String, String> listOfAliveCells = new LinkedHashMap<>();
 
     public static JPanel southPanel = new JPanel();
     public static DrawPanel drawPanel = new DrawPanel();
     public static JPanel speedPanel = new JPanel();
-    public static JPanel speedHelpPanel = new JPanel();
 
     public static JFrame mainFrame = getFrame("Game of Life", null, 700, 700, new BorderLayout(), null, true);
 
@@ -51,6 +52,15 @@ public class MainVariables {
 
     public static JLabel labelSpeed = getLabel("Speed: " + 1000/speedMilliseconds + " steps/s", f10, null, null);
     public static JLabel labelScale = getLabel("Scale: "+ cameraScalePixelsPerCell +" pix/sq", f10, null, null);
+
+    public static Color colorButtonsPanel = new Color(0x52C17D00, true);
+    public static Color colorRun = new Color(0x7236EE00, true);
+    public static Color colorStop = new Color(0x72EE0000, true);
+    public static Color colorNextStep = new Color(0x81FFF300, true);
+    public static Color colorClear = new Color(0x72FFFFFF, true);
+    public static Color colorSpeedPanel = new Color(0x0C17D00, true);
+    public static Color colorSpeedPlus = new Color(0x7200E6EE, true);
+    public static Color colorSpeedMinus = new Color(0x720028EE, true);
 
 
     public static class FrameKeyListener implements KeyListener {
@@ -66,29 +76,34 @@ public class MainVariables {
                 case 'W':
                 case 'ц':
                 case 'Ц':
-                    w = true;
+                    if (!w)
+                        w = true;
                     break;
                 case 'a':
                 case 'A':
                 case 'ф':
                 case 'Ф':
-                    a = true;
+                    if (!a)
+                        a = true;
                     break;
                 case 'd':
                 case 'D':
                 case 'в':
                 case 'В':
-                    d = true;
+                    if (!d)
+                        d = true;
                     break;
                 case 's':
                 case 'S':
                 case 'ы':
                 case 'Ы':
-                    s = true;
+                    if (!s)
+                        s = true;
                     break;
                 case '-':
                     interfaceVisible = !interfaceVisible;
                     Mechanic.mainMenu();
+                    break;
                 default:
                     System.out.println(e.getKeyChar());
                     break;
@@ -134,7 +149,7 @@ public class MainVariables {
 
         @Override
         public void mousePressed(MouseEvent e) {
-            if (!started) {
+            if (!iterationGoing) {
                 if (e.getButton() == MouseEvent.BUTTON1) {
 
                     double x = ((e.getX()-6)-cameraCenterCellX*cameraScalePixelsPerCell-cameraCenterCellDoubleX-(double)(mainFrame.getWidth())/2)/cameraScalePixelsPerCell;
@@ -152,14 +167,14 @@ public class MainVariables {
                     int[] ints = {(int) x, (int) y};
 
                     boolean isContain = false;
-                    for (int[] el : listOfAliveCells) {
-                        if (ints[0] == el[0] && ints[1] == el[1]) {
+                    for (Map.Entry<String, String> elSet : listOfAliveCells.entrySet()) {
+                        if (ints[0] == Integer.parseInt(elSet.getKey().split("_")[0]) && ints[1] == Integer.parseInt(elSet.getKey().split("_")[1])) {
                             isContain = true;
                             break;
                         }
                     }
                     if (!isContain) {
-                        listOfAliveCells.add(ints);
+                        listOfAliveCells.put(ints[0]+"_"+ints[1], "");
                     }
                 } else if (e.getButton() == MouseEvent.BUTTON3) {
 
@@ -177,9 +192,9 @@ public class MainVariables {
 
                     int[] ints = {(int) x, (int) y};
 
-                    for (int[] el : listOfAliveCells) {
-                        if (ints[0] == el[0] && ints[1] == el[1]) {
-                            listOfAliveCells.remove(el);
+                    for (Map.Entry<String, String> elSet : listOfAliveCells.entrySet()) {
+                        if (ints[0] == Integer.parseInt(elSet.getKey().split("_")[0]) && ints[1] == Integer.parseInt(elSet.getKey().split("_")[1])) {
+                            listOfAliveCells.remove(elSet.getKey());
                             break;
                         }
                     }
@@ -254,15 +269,7 @@ public class MainVariables {
     private static class Start implements ActionListener {
         @Override
         public void actionPerformed(ActionEvent e) {
-            if (started) {
-                buttonStart.setText("Run");
-                buttonStart.setBackground(new Color(0x7236EE00, true));
-                started = false;
-            } else {
-                buttonStart.setText("Stop");
-                buttonStart.setBackground(new Color(0x72EE0000, true));
-                started = true;
-            }
+            start();
         }
     }
     private static class NextStep implements ActionListener {
@@ -277,7 +284,7 @@ public class MainVariables {
             if (started) {
                 started = false;
             }
-            listOfAliveCells = new ArrayList<>();
+            listOfAliveCells = new LinkedHashMap<>();
         }
     }
     private static class SpeedPlus implements ActionListener {

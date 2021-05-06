@@ -2,6 +2,7 @@ package Mechanic;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.Map;
 
 import static Mechanic.MainVariables.*;
 
@@ -14,8 +15,8 @@ public class DrawPanel extends JPanel {
         labelScale.setText("Scale: "+ cameraScalePixelsPerCell +" pix/1 sq");
 
         g.setColor(new Color(0)); //0xFFCC00
-        for (int[] ints : listOfAliveCells) {
-            g.fillRect(mainFrame.getWidth()/2+cameraCenterCellX*cameraScalePixelsPerCell+cameraCenterCellDoubleX+ints[0]*cameraScalePixelsPerCell, mainFrame.getHeight()/2+cameraCenterCellY*cameraScalePixelsPerCell+cameraCenterCellDoubleY+ints[1]*cameraScalePixelsPerCell, cameraScalePixelsPerCell, cameraScalePixelsPerCell);
+        for (Map.Entry<String, String> cellsSet : listOfAliveCells.entrySet()) {
+            g.fillRect(mainFrame.getWidth()/2+cameraCenterCellX*cameraScalePixelsPerCell+cameraCenterCellDoubleX+ Integer.parseInt(cellsSet.getKey().split("_")[0])*cameraScalePixelsPerCell, mainFrame.getHeight()/2+cameraCenterCellY*cameraScalePixelsPerCell+cameraCenterCellDoubleY+ Integer.parseInt(cellsSet.getKey().split("_")[1])*cameraScalePixelsPerCell, cameraScalePixelsPerCell, cameraScalePixelsPerCell);
         }
 
         g.setColor(new Color(0x70000000, true));

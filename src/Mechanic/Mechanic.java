@@ -2,17 +2,13 @@ package Mechanic;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
+import java.util.*;
 
 import static Libraries.Methods.*;
 import static Mechanic.MainVariables.*;
 
 public class Mechanic {
     void preparation() {
-        int[][] ints = new int[1][2];
-
         visTrue(mainFrame);
 
         drawPanel.addKeyListener(new FrameKeyListener());
@@ -33,15 +29,10 @@ public class Mechanic {
         southPanel.add(buttonClear);
         buttonClear.setBackground(new Color(0x72FFFFFF, true));
 
-
         southPanel.add(speedPanel);
         BoxLayout boxLayout = new BoxLayout(speedPanel, BoxLayout.Y_AXIS);
         speedPanel.setLayout(boxLayout);
         speedPanel.setBackground(new Color(0x0C17D00, true));
-
-//        speedHelpPanel.setLayout(new BoxLayout(speedHelpPanel, BoxLayout.Y_AXIS));
-//        speedHelpPanel.setBackground(new Color(0x52C17D00, true));
-//        speedPanel.add(speedHelpPanel);
 
         speedPanel.add(labelSpeed);
         speedPanel.add(Box.createRigidArea(new Dimension(0,5)));
@@ -89,6 +80,18 @@ public class Mechanic {
         visFalse(labelScale);
     }
 
+    public static void start() {
+        if (started) {
+            buttonStart.setText("Run");
+            buttonStart.setBackground(new Color(0x7236EE00, true));
+            started = false;
+        } else {
+            buttonStart.setText("Stop");
+            buttonStart.setBackground(new Color(0x72EE0000, true));
+            started = true;
+        }
+    }
+
     public static class GameLoop extends Thread {
         public void run() {
             double previous = new Date().getTime();
@@ -116,144 +119,105 @@ public class Mechanic {
                     } catch (InterruptedException ignored) { }
                 }
                 iterationForNextStep++;
-                iterationForMove++;
+//                iterationForMove++;
             }
         }
         public void handleInput() {
-            if (iterationForMove >= 1) {
-                if (w) {
-                    cameraCenterCellDoubleY += 1;
-                    if (cameraCenterCellDoubleY >= cameraScalePixelsPerCell) {
-                        cameraCenterCellDoubleY = 0;
-                        cameraCenterCellY += 1;
-                    }
-                } else if (s) {
-                    cameraCenterCellDoubleY -= 1;
-                    if (cameraCenterCellDoubleY <= -1) {
-                        cameraCenterCellDoubleY = cameraScalePixelsPerCell-1;
-                        cameraCenterCellY -= 1;
-                    }
+            if (!s && w) {
+                cameraCenterCellDoubleY += 1;
+                if (cameraCenterCellDoubleY >= cameraScalePixelsPerCell) {
+                    cameraCenterCellY += cameraCenterCellDoubleY/cameraScalePixelsPerCell;
+                    cameraCenterCellDoubleY = 0;
                 }
-                if (a) {
-                    cameraCenterCellDoubleX += 1;
-                    if (cameraCenterCellDoubleX >= cameraScalePixelsPerCell) {
-                        cameraCenterCellDoubleX = 0;
-                        cameraCenterCellX += 1;
-                    }
-                } else if (d) {
-                    cameraCenterCellDoubleX -= 1;
-                    if (cameraCenterCellDoubleX <= -1) {
-                        cameraCenterCellDoubleX = cameraScalePixelsPerCell-1;
-                        cameraCenterCellX -= 1;
-                    }
+            } else if (!w && s) {
+                cameraCenterCellDoubleY -= 1;
+                if (cameraCenterCellDoubleY <= -1) {
+                    cameraCenterCellY -= (-cameraCenterCellDoubleY)/cameraScalePixelsPerCell+1;
+                    cameraCenterCellDoubleY = cameraScalePixelsPerCell-1;
                 }
-                iterationForMove = 0;
+            }
+            if (!d && a) {
+                cameraCenterCellDoubleX += 1;
+                if (cameraCenterCellDoubleX >= cameraScalePixelsPerCell) {
+                    cameraCenterCellX += cameraCenterCellDoubleX/cameraScalePixelsPerCell;
+                    cameraCenterCellDoubleX = 0;
+                }
+            } else if (!a && d) {
+                cameraCenterCellDoubleX -= 1;
+                if (cameraCenterCellDoubleX <= -1) {
+                    cameraCenterCellX -= (-cameraCenterCellDoubleX)/cameraScalePixelsPerCell+1;
+                    cameraCenterCellDoubleX = cameraScalePixelsPerCell-1;
+                }
             }
         }
         public void updateGameStats() {
-            if ((started && speedMilliseconds < iterationForNextStep * (1000d / 30)) || numOfNextSteps > 0) {
+            if (((started && speedMilliseconds < iterationForNextStep * (1000d / 30))) || numOfNextSteps > 0) {
+                iterationGoing = true;
+                LinkedHashMap<String, String> listOfAliveCellsCopy = listOfAliveCells;
+
                 //removing alive cells with wrong number of neighbours.
-                ArrayList<int[]> listOfDeathCells = new ArrayList<>();
-                for (int[] ints : listOfAliveCells) {
-                    int neighbours = returnNumberOfNeighbours(ints);
+                ArrayList<int[]> listOfDeadCells = new ArrayList<>();
+                for (Map.Entry<String, String> cellsSet : listOfAliveCellsCopy.entrySet()) {
+                    int cellX = Integer.parseInt(cellsSet.getKey().split("_")[0]);
+                    int cellY = Integer.parseInt(cellsSet.getKey().split("_")[1]);
+                    int neighbours = returnNumberOfNeighbours(new int[]{cellX, cellY}, listOfAliveCellsCopy);
                     if (!(neighbours >= lowestPossibleNeighbourNumberForAliveCell && neighbours <= highestPossibleNeighbourNumberForAliveCell)) {
-                        listOfDeathCells.add(ints);
+                        listOfDeadCells.add(new int[]{cellX, cellY});
                     }
                 }
 
                 //adding new cells where it is right number of neighbours.
                 ArrayList<int[]> listOfNewCells = new ArrayList<>();
-                for (int[] ints : listOfAliveCells) {
-                    System.out.println("Searching around cell: " + Arrays.toString(ints));
-                    int[] search = new int[]{ints[0]-1, ints[1]-1};
-                    System.out.println("Checking death cell: " + Arrays.toString(search));
-                    if (!contains(listOfAliveCells, search) && !contains(listOfNewCells, search)) {
-                        System.out.println("Neighbours: " + returnNumberOfNeighbours(search));
-                        if (returnNumberOfNeighbours(search) == neighbourNumberForNewCell) {
-                            System.out.println("Adding...");
-                            listOfNewCells.add(search);
-                        }
-                        System.out.println();
+                for (Map.Entry<String, String> cellsSet : listOfAliveCellsCopy.entrySet()) {
+                    int cellX = Integer.parseInt(cellsSet.getKey().split("_")[0]);
+                    int cellY = Integer.parseInt(cellsSet.getKey().split("_")[1]);
+                    System.out.println("Searching around cell: " + Arrays.toString(new int[]{cellX, cellY}));
+
+                    if (checkForNewCell(listOfAliveCellsCopy, listOfNewCells, new int[]{cellX-1, cellY-1})) {
+                        System.out.println("Adding...");
+                        listOfNewCells.add(new int[]{cellX-1, cellY-1});
                     }
-                    search = new int[]{ints[0]+1, ints[1]-1};
-                    System.out.println("Checking death cell: " + Arrays.toString(search));
-                    if (!contains(listOfAliveCells, search) && !contains(listOfNewCells, search)) {
-                        System.out.println("Neighbours: " + returnNumberOfNeighbours(search));
-                        if (returnNumberOfNeighbours(search) == neighbourNumberForNewCell) {
-                            System.out.println("Adding...");
-                            listOfNewCells.add(search);
-                        }
-                        System.out.println();
+                    if (checkForNewCell(listOfAliveCellsCopy, listOfNewCells, new int[]{cellX+1, cellY-1})) {
+                        System.out.println("Adding...");
+                        listOfNewCells.add(new int[]{cellX+1, cellY-1});
                     }
-                    search = new int[]{ints[0]-1, ints[1]+1};
-                    System.out.println("Checking death cell: " + Arrays.toString(search));
-                    if (!contains(listOfAliveCells, search) && !contains(listOfNewCells, search)) {
-                        System.out.println("Neighbours: " + returnNumberOfNeighbours(search));
-                        if (returnNumberOfNeighbours(search) == neighbourNumberForNewCell) {
-                            System.out.println("Adding...");
-                            listOfNewCells.add(search);
-                        }
-                        System.out.println();
+                    if (checkForNewCell(listOfAliveCellsCopy, listOfNewCells, new int[]{cellX-1, cellY+1})) {
+                        System.out.println("Adding...");
+                        listOfNewCells.add(new int[]{cellX-1, cellY+1});
                     }
-                    search = new int[]{ints[0]+1, ints[1]+1};
-                    System.out.println("Checking death cell: " + Arrays.toString(search));
-                    if (!contains(listOfAliveCells, search) && !contains(listOfNewCells, search)) {
-                        System.out.println("Neighbours: " + returnNumberOfNeighbours(search));
-                        if (returnNumberOfNeighbours(search) == neighbourNumberForNewCell) {
-                            System.out.println("Adding...");
-                            listOfNewCells.add(search);
-                        }
-                        System.out.println();
+                    if (checkForNewCell(listOfAliveCellsCopy, listOfNewCells, new int[]{cellX+1, cellY+1})) {
+                        System.out.println("Adding...");
+                        listOfNewCells.add(new int[]{cellX+1, cellY+1});
                     }
-                    search = new int[]{ints[0], ints[1]-1};
-                    System.out.println("Checking death cell: " + Arrays.toString(search));
-                    if (!contains(listOfAliveCells, search) && !contains(listOfNewCells, search)) {
-                        System.out.println("Neighbours: " + returnNumberOfNeighbours(search));
-                        if (returnNumberOfNeighbours(search) == neighbourNumberForNewCell) {
-                            System.out.println("Adding...");
-                            listOfNewCells.add(search);
-                        }
-                        System.out.println();
+                    if (checkForNewCell(listOfAliveCellsCopy, listOfNewCells, new int[]{cellX, cellY-1})) {
+                        System.out.println("Adding...");
+                        listOfNewCells.add(new int[]{cellX, cellY-1});
                     }
-                    search = new int[]{ints[0], ints[1]+1};
-                    System.out.println("Checking death cell: " + Arrays.toString(search));
-                    if (!contains(listOfAliveCells, search) && !contains(listOfNewCells, search)) {
-                        System.out.println("Neighbours: " + returnNumberOfNeighbours(search));
-                        if (returnNumberOfNeighbours(search) == neighbourNumberForNewCell) {
-                            System.out.println("Adding...");
-                            listOfNewCells.add(search);
-                        }
-                        System.out.println();
+                    if (checkForNewCell(listOfAliveCellsCopy, listOfNewCells, new int[]{cellX, cellY+1})) {
+                        System.out.println("Adding...");
+                        listOfNewCells.add(new int[]{cellX, cellY+1});
                     }
-                    search = new int[]{ints[0]-1, ints[1]};
-                    System.out.println("Checking death cell: " + Arrays.toString(search));
-                    if (!contains(listOfAliveCells, search) && !contains(listOfNewCells, search)) {
-                        System.out.println("Neighbours: " + returnNumberOfNeighbours(search));
-                        if (returnNumberOfNeighbours(search) == neighbourNumberForNewCell) {
-                            System.out.println("Adding...");
-                            listOfNewCells.add(search);
-                        }
-                        System.out.println();
+                    if (checkForNewCell(listOfAliveCellsCopy, listOfNewCells, new int[]{cellX-1, cellY})) {
+                        System.out.println("Adding...");
+                        listOfNewCells.add(new int[]{cellX-1, cellY});
                     }
-                    search = new int[]{ints[0]+1, ints[1]};
-                    System.out.println("Checking death cell: " + Arrays.toString(search));
-                    if (!contains(listOfAliveCells, search) && !contains(listOfNewCells, search)) {
-                        System.out.println("Neighbours: " + returnNumberOfNeighbours(search));
-                        if (returnNumberOfNeighbours(search) == neighbourNumberForNewCell) {
-                            System.out.println("Adding...");
-                            listOfNewCells.add(search);
-                        }
-                        System.out.println();
+                    if (checkForNewCell(listOfAliveCellsCopy, listOfNewCells, new int[]{cellX+1, cellY})) {
+                        System.out.println("Adding...");
+                        listOfNewCells.add(new int[]{cellX+1, cellY});
                     }
                     System.out.println("--------------------------------");
                 }
 
 
-                if (!listOfDeathCells.isEmpty()) {
-                    listOfAliveCells.removeAll(listOfDeathCells);
+                if (!listOfDeadCells.isEmpty()) {
+                    for (int[] listSet : listOfDeadCells)
+                        listOfAliveCellsCopy.remove(listSet[0]+"_"+listSet[1]);
                 }
                 if (!listOfNewCells.isEmpty()) {
-                    listOfAliveCells.addAll(listOfNewCells);
+                    for (int[] listSet : listOfNewCells) {
+                        listOfAliveCellsCopy.put(listSet[0] + "_" + listSet[1], "");
+                        System.out.println(listSet[0] + "_" + listSet[1] + " was added to the list of alive cells");
+                    }
                 }
 
                 if (numOfNextSteps > 0) {
@@ -261,46 +225,42 @@ public class Mechanic {
                 } else {
                     iterationForNextStep = 1;
                 }
-                System.out.println("Alive cells:");
-                for (int[] el : listOfAliveCells) {
-                    System.out.println("x: " + el[0] + ", y: " + el[1]);
-                }
                 System.out.println("END OF ITERATION\n========================================");
+
+                iterationGoing = false;
             }
             if (!started) {
                 iterationForNextStep = 1;
             }
         }
 
-        public int returnNumberOfNeighbours(int[] ints) {
+        public int returnNumberOfNeighbours(int[] ints, LinkedHashMap<String, String> listOfAliveCellsCopy) {
             int neighbours = 0;
 
-            for (int[] el : listOfAliveCells) {
-                if (ints[0]-1 == el[0] && ints[1]-1 == el[1])
-                    neighbours++;
-                if (ints[0]+1 == el[0] && ints[1]-1 == el[1])
-                    neighbours++;
-                if (ints[0]-1 == el[0] && ints[1]+1 == el[1])
-                    neighbours++;
-                if (ints[0]+1 == el[0] && ints[1]+1 == el[1])
-                    neighbours++;
-                if (ints[0] == el[0] && ints[1]-1 == el[1])
-                    neighbours++;
-                if (ints[0] == el[0] && ints[1]+1 == el[1])
-                    neighbours++;
-                if (ints[0]-1 == el[0] && ints[1] == el[1])
-                    neighbours++;
-                if (ints[0]+1 == el[0] && ints[1] == el[1])
-                    neighbours++;
-            }
+            if (listOfAliveCellsCopy.containsKey((ints[0]-1)+"_"+(ints[1]-1)))
+                neighbours++;
+            if (listOfAliveCellsCopy.containsKey((ints[0]+1)+"_"+(ints[1]-1)))
+                neighbours++;
+            if (listOfAliveCellsCopy.containsKey((ints[0]-1)+"_"+(ints[1]+1)))
+                neighbours++;
+            if (listOfAliveCellsCopy.containsKey((ints[0]+1)+"_"+(ints[1]+1)))
+                neighbours++;
+            if (listOfAliveCellsCopy.containsKey((ints[0])+"_"+(ints[1]-1)))
+                neighbours++;
+            if (listOfAliveCellsCopy.containsKey((ints[0])+"_"+(ints[1]+1)))
+                neighbours++;
+            if (listOfAliveCellsCopy.containsKey((ints[0]-1)+"_"+(ints[1])))
+                neighbours++;
+            if (listOfAliveCellsCopy.containsKey((ints[0]+1)+"_"+(ints[1])))
+                neighbours++;
 
             return neighbours;
         }
-        public boolean contains(ArrayList<int[]> list, int[] ints) {
-            for (int[] el : list) {
-                if (ints[0] == el[0] && ints[1] == el[1]) {
-                    return true;
-                }
+
+        public boolean checkForNewCell(LinkedHashMap<String, String> listOfAliveCellsCopy, ArrayList<int[]> listOfNewCells, int[] searchCell) {
+            System.out.println("Checking for new cell: " + Arrays.toString(searchCell));
+            if (!listOfAliveCellsCopy.containsKey(searchCell[0]+"_"+searchCell[1]) && !listOfNewCells.contains(searchCell)) {
+                return returnNumberOfNeighbours(searchCell, listOfAliveCellsCopy) == neighbourNumberForNewCell;
             }
             return false;
         }

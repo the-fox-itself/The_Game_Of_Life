@@ -60,7 +60,7 @@ public abstract class Methods {
     public final static int NOTE_TYPE_ERROR = 3;
     public final static int NOTE_TYPE_INFO = 4;
 
-    public final static String DEFAULT_NOTE_SENDER = "War_Of_Cards";
+    public final static String DEFAULT_NOTE_SENDER = "Game_Of_Life";
 
     public static void printNote(String sender, String note, int type) {
         switch (type) {
