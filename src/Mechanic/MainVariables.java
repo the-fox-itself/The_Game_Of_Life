@@ -32,6 +32,12 @@ public class MainVariables {
     public static boolean s = false;
     public static boolean d = false;
 
+    public static boolean button1 = false;
+    public static boolean button3 = false;
+
+    public static int mouseX;
+    public static int mouseY;
+
     public static boolean interfaceVisible = true;
     public static boolean started = false;
     public static boolean iterationGoing = false;
@@ -149,62 +155,26 @@ public class MainVariables {
 
         @Override
         public void mousePressed(MouseEvent e) {
-            if (!iterationGoing) {
-                if (e.getButton() == MouseEvent.BUTTON1) {
-
-                    double x = ((e.getX()-6)-cameraCenterCellX*cameraScalePixelsPerCell-cameraCenterCellDoubleX-(double)(mainFrame.getWidth())/2)/cameraScalePixelsPerCell;
-                    double y = ((e.getY()-29)-cameraCenterCellY*cameraScalePixelsPerCell-cameraCenterCellDoubleY-(double)(mainFrame.getHeight())/2)/cameraScalePixelsPerCell;
-
-                    if (x < 0 && y < 0) {
-                        x--;
-                        y--;
-                    } else if (x < 0) {
-                        x--;
-                    } else if (y < 0) {
-                        y--;
-                    }
-
-                    int[] ints = {(int) x, (int) y};
-
-                    boolean isContain = false;
-                    for (Map.Entry<String, String> elSet : listOfAliveCells.entrySet()) {
-                        if (ints[0] == Integer.parseInt(elSet.getKey().split("_")[0]) && ints[1] == Integer.parseInt(elSet.getKey().split("_")[1])) {
-                            isContain = true;
-                            break;
-                        }
-                    }
-                    if (!isContain) {
-                        listOfAliveCells.put(ints[0]+"_"+ints[1], "");
-                    }
-                } else if (e.getButton() == MouseEvent.BUTTON3) {
-
-                    double x = ((e.getX()-6)-cameraCenterCellX*cameraScalePixelsPerCell-cameraCenterCellDoubleX-(double)(mainFrame.getWidth())/2)/cameraScalePixelsPerCell;
-                    double y = ((e.getY()-29)-cameraCenterCellY*cameraScalePixelsPerCell-cameraCenterCellDoubleY-(double)(mainFrame.getHeight())/2)/cameraScalePixelsPerCell;
-
-                    if (x < 0 && y < 0) {
-                        x--;
-                        y--;
-                    } else if (x < 0) {
-                        x--;
-                    } else if (y < 0) {
-                        y--;
-                    }
-
-                    int[] ints = {(int) x, (int) y};
-
-                    for (Map.Entry<String, String> elSet : listOfAliveCells.entrySet()) {
-                        if (ints[0] == Integer.parseInt(elSet.getKey().split("_")[0]) && ints[1] == Integer.parseInt(elSet.getKey().split("_")[1])) {
-                            listOfAliveCells.remove(elSet.getKey());
-                            break;
-                        }
-                    }
-                }
+            switch (e.getButton()) {
+                case MouseEvent.BUTTON1:
+                    button1 = true;
+                    break;
+                case MouseEvent.BUTTON3:
+                    button3 = true;
+                    break;
             }
         }
 
         @Override
         public void mouseReleased(MouseEvent e) {
-
+            switch (e.getButton()) {
+                case MouseEvent.BUTTON1:
+                    button1 = false;
+                    break;
+                case MouseEvent.BUTTON3:
+                    button3 = false;
+                    break;
+            }
         }
 
         @Override
@@ -215,6 +185,20 @@ public class MainVariables {
         @Override
         public void mouseExited(MouseEvent e) {
 
+        }
+    }
+
+    public static class FrameMouseMotionListener implements MouseMotionListener {
+        @Override
+        public void mouseDragged(MouseEvent e) {
+            mouseX = e.getX();
+            mouseY = e.getY();
+        }
+
+        @Override
+        public void mouseMoved(MouseEvent e) {
+            mouseX = e.getX();
+            mouseY = e.getY();
         }
     }
 
@@ -282,7 +266,7 @@ public class MainVariables {
         @Override
         public void actionPerformed(ActionEvent e) {
             if (started) {
-                started = false;
+                start();
             }
             listOfAliveCells = new LinkedHashMap<>();
         }

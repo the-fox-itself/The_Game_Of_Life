@@ -112,11 +112,11 @@ public abstract class Methods {
     }
     public static void visTrue(Component component) {
         component.setVisible(true);
-        printNote("Displaying component [isVisible:true, component:"+component+"]", NOTE_TYPE_DONE);
+//        printNote("Displaying component [isVisible:true, component:"+component+"]", NOTE_TYPE_DONE);
     }
     public static void visFalse(Component component) {
         component.setVisible(false);
-        printNote("Hiding component [isVisible:false, component:"+component+"]", NOTE_TYPE_DONE);
+//        printNote("Hiding component [isVisible:false, component:"+component+"]", NOTE_TYPE_DONE);
     }
     public static void setComponent(Container container, Component component, Font font, int x, int y, int width, int height) {
         container.add(component);

@@ -18,6 +18,7 @@ public class Mechanic {
         buttonSpeedPlus.addKeyListener(new FrameKeyListener());
         buttonSpeedMinus.addKeyListener(new FrameKeyListener());
         mainFrame.addMouseListener(new FrameMouseListener());
+        mainFrame.addMouseMotionListener(new FrameMouseMotionListener());
         mainFrame.addMouseWheelListener(new FrameMouseWheelListener());
 
         southPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 40, 10));
@@ -147,6 +148,53 @@ public class Mechanic {
                 if (cameraCenterCellDoubleX <= -1) {
                     cameraCenterCellX -= (-cameraCenterCellDoubleX)/cameraScalePixelsPerCell+1;
                     cameraCenterCellDoubleX = cameraScalePixelsPerCell-1;
+                }
+            }
+            if (button1) {
+                double x = ((mouseX-6)-cameraCenterCellX*cameraScalePixelsPerCell-cameraCenterCellDoubleX-(double)(mainFrame.getWidth())/2)/cameraScalePixelsPerCell;
+                double y = ((mouseY-29)-cameraCenterCellY*cameraScalePixelsPerCell-cameraCenterCellDoubleY-(double)(mainFrame.getHeight())/2)/cameraScalePixelsPerCell;
+
+                if (x < 0 && y < 0) {
+                    x--;
+                    y--;
+                } else if (x < 0) {
+                    x--;
+                } else if (y < 0) {
+                    y--;
+                }
+
+                int[] ints = {(int) x, (int) y};
+
+                boolean isContain = false;
+                for (Map.Entry<String, String> elSet : listOfAliveCells.entrySet()) {
+                    if (ints[0] == Integer.parseInt(elSet.getKey().split("_")[0]) && ints[1] == Integer.parseInt(elSet.getKey().split("_")[1])) {
+                        isContain = true;
+                        break;
+                    }
+                }
+                if (!isContain) {
+                    listOfAliveCells.put(ints[0]+"_"+ints[1], "");
+                }
+            } else if (button3) {
+                double x = ((mouseX-6)-cameraCenterCellX*cameraScalePixelsPerCell-cameraCenterCellDoubleX-(double)(mainFrame.getWidth())/2)/cameraScalePixelsPerCell;
+                double y = ((mouseY-29)-cameraCenterCellY*cameraScalePixelsPerCell-cameraCenterCellDoubleY-(double)(mainFrame.getHeight())/2)/cameraScalePixelsPerCell;
+
+                if (x < 0 && y < 0) {
+                    x--;
+                    y--;
+                } else if (x < 0) {
+                    x--;
+                } else if (y < 0) {
+                    y--;
+                }
+
+                int[] ints = {(int) x, (int) y};
+
+                for (Map.Entry<String, String> elSet : listOfAliveCells.entrySet()) {
+                    if (ints[0] == Integer.parseInt(elSet.getKey().split("_")[0]) && ints[1] == Integer.parseInt(elSet.getKey().split("_")[1])) {
+                        listOfAliveCells.remove(elSet.getKey());
+                        break;
+                    }
                 }
             }
         }
