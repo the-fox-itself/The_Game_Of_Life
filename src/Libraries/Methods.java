@@ -33,6 +33,7 @@ public abstract class Methods {
     public final static Font f20 = new Font(font, style, 20);
     public final static Font f17 = new Font(font, style, 17);
     public final static Font f15 = new Font(font, style, 15);
+    public final static Font f12 = new Font(font, style, 12);
     public final static Font f10 = new Font(font, style, 10);
 
     public static final String ANSI_RESET = "\u001B[0m";

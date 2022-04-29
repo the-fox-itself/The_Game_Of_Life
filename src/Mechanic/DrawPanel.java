@@ -14,12 +14,50 @@ public class DrawPanel extends JPanel {
         g.setColor(Color.white);
         labelScale.setText("Scale: "+ cameraScalePixelsPerCell +" pix/1 sq");
 
-        g.setColor(new Color(0)); //0xFFCC00
-        for (Map.Entry<String, String> cellsSet : listOfAliveCells.entrySet()) {
-            g.fillRect(mainFrame.getWidth()/2+cameraCenterCellX*cameraScalePixelsPerCell+cameraCenterCellDoubleX+ Integer.parseInt(cellsSet.getKey().split("_")[0])*cameraScalePixelsPerCell, mainFrame.getHeight()/2+cameraCenterCellY*cameraScalePixelsPerCell+cameraCenterCellDoubleY+ Integer.parseInt(cellsSet.getKey().split("_")[1])*cameraScalePixelsPerCell, cameraScalePixelsPerCell, cameraScalePixelsPerCell);
+        if (currentTheme == THEME_DARK) {
+            g.setColor(new Color(0));
+            g.fillRect(0, 0, mainFrame.getWidth(), getHeight());
+        }
+        switch (currentTheme) {
+            case THEME_LIGHT:
+                g.setColor(new Color(0));
+                break;
+            case THEME_DARK:
+                g.setColor(new Color(0xFFFFFF));
+                break;
+            case THEME_COLOURFUL:
+                g.setColor(colorAliveCell);
+                break;
+        }
+        for (Map.Entry<Integer, Cell> aliveCallsSet : listOfAliveCells.entrySet()) {
+            Cell cell = aliveCallsSet.getValue();
+            if (cell.type == Cell.TYPE_CONSTANT) {
+                g.setColor(new Color(0x330000));
+                g.fillRect(mainFrame.getWidth()/2+cameraCenterCellX*cameraScalePixelsPerCell+cameraCenterCellDoubleX+ cell.x*cameraScalePixelsPerCell, mainFrame.getHeight()/2+cameraCenterCellY*cameraScalePixelsPerCell+cameraCenterCellDoubleY+ cell.y*cameraScalePixelsPerCell, cameraScalePixelsPerCell, cameraScalePixelsPerCell);
+                g.setColor(new Color(0));
+            } else {
+                g.fillRect(mainFrame.getWidth() / 2 + cameraCenterCellX * cameraScalePixelsPerCell + cameraCenterCellDoubleX + cell.x * cameraScalePixelsPerCell, mainFrame.getHeight() / 2 + cameraCenterCellY * cameraScalePixelsPerCell + cameraCenterCellDoubleY + cell.y * cameraScalePixelsPerCell, cameraScalePixelsPerCell, cameraScalePixelsPerCell);
+            }
+        }
+        if (currentCellBrush == CELL_BRUSH_COMMON) {
+            g.setColor(new Color(0x20000000, true));
+        } else if (currentCellBrush == CELL_BRUSH_CONSTANT) {
+            g.setColor(new Color(0x41000000, true));
+        }
+        if (currentBrush == BRUSH_BRUSH)
+            drawSelectedSquare(g, 0, 0);
+        else if (currentBrush == BRUSH_GLIDER) {
+            drawSelectedSquare(g, -1, 0);
+            drawSelectedSquare(g, 0, 1);
+            drawSelectedSquare(g, 1, 1);
+            drawSelectedSquare(g, 1, 0);
+            drawSelectedSquare(g, 1, -1);
         }
 
-        g.setColor(new Color(0x70000000, true));
+        if (currentTheme == THEME_LIGHT)
+            g.setColor(new Color(0x70000000, true));
+        else if (currentTheme == THEME_DARK)
+            g.setColor(new Color(0xFFFFFF));
         if (cameraScalePixelsPerCell > 3) {
             for (int y = mainFrame.getHeight()/2 + cameraCenterCellDoubleY; y <= mainFrame.getHeight(); y += cameraScalePixelsPerCell) {
                 g.drawLine(0, y, mainFrame.getWidth(), y);
@@ -40,5 +78,11 @@ public class DrawPanel extends JPanel {
             g.drawLine(mainFrame.getWidth()/2 + cameraCenterCellDoubleX, 0, mainFrame.getWidth()/2 + cameraCenterCellDoubleX, mainFrame.getHeight()*2);
             g.drawLine(mainFrame.getWidth()/2 + cameraCenterCellDoubleX+1, 0, mainFrame.getWidth()/2 + cameraCenterCellDoubleX+1, mainFrame.getHeight()*2);
         }
+    }
+
+    public static void drawSelectedSquare(Graphics g, int xDifference, int yDifference) {
+        g.fillRect(mainFrame.getWidth()/2+cameraCenterCellX*cameraScalePixelsPerCell+cameraCenterCellDoubleX+
+                (selectedCell[0]+xDifference)*cameraScalePixelsPerCell, mainFrame.getHeight()/2+cameraCenterCellY*cameraScalePixelsPerCell+
+                cameraCenterCellDoubleY+ (selectedCell[1]+yDifference)*cameraScalePixelsPerCell, cameraScalePixelsPerCell, cameraScalePixelsPerCell);
     }
 }

@@ -17,35 +17,42 @@ public class Mechanic {
         buttonClear.addKeyListener(new FrameKeyListener());
         buttonSpeedPlus.addKeyListener(new FrameKeyListener());
         buttonSpeedMinus.addKeyListener(new FrameKeyListener());
+        buttonScalePlus.addKeyListener(new FrameKeyListener());
+        buttonScaleMinus.addKeyListener(new FrameKeyListener());
         mainFrame.addMouseListener(new FrameMouseListener());
         mainFrame.addMouseMotionListener(new FrameMouseMotionListener());
         mainFrame.addMouseWheelListener(new FrameMouseWheelListener());
 
         southPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 40, 10));
-        southPanel.setBackground(new Color(0x52C17D00, true));
+        southPanel.setBackground(new Color(0x2F5A5A5A, true));
         southPanel.add(buttonStart);
-        buttonStart.setBackground(new Color(0x7236EE00, true));
         southPanel.add(buttonNextStep);
-        buttonNextStep.setBackground(new Color(0x81FFF300, true));
         southPanel.add(buttonClear);
-        buttonClear.setBackground(new Color(0x72FFFFFF, true));
 
         southPanel.add(speedPanel);
         BoxLayout boxLayout = new BoxLayout(speedPanel, BoxLayout.Y_AXIS);
         speedPanel.setLayout(boxLayout);
-        speedPanel.setBackground(new Color(0x0C17D00, true));
+        speedPanel.setBackground(new Color(0x0000000, true));
 
         speedPanel.add(labelSpeed);
-        speedPanel.add(Box.createRigidArea(new Dimension(0,5)));
+        speedPanel.add(Box.createRigidArea(new Dimension(0,10)));
         speedPanel.add(buttonSpeedPlus);
-        buttonSpeedPlus.setBackground(new Color(0x7200E6EE, true));
         speedPanel.add(Box.createRigidArea(new Dimension(0,5)));
         speedPanel.add(buttonSpeedMinus);
-        buttonSpeedMinus.setBackground(new Color(0x720028EE, true));
 
-        southPanel.add(labelScale);
+        southPanel.add(scalePanel);
+        BoxLayout boxLayout1 = new BoxLayout(scalePanel, BoxLayout.Y_AXIS);
+        scalePanel.setLayout(boxLayout1);
+        scalePanel.setBackground(new Color(0x0000000, true));
+
+        scalePanel.add(labelScale);
+        scalePanel.add(Box.createRigidArea(new Dimension(0,10)));
+        scalePanel.add(buttonScalePlus);
+        scalePanel.add(Box.createRigidArea(new Dimension(0,5)));
+        scalePanel.add(buttonScaleMinus);
 
         mainFrame.getContentPane().add(southPanel, BorderLayout.SOUTH);
+//        mainFrame.getContentPane().add(northPanel, BorderLayout.NORTH);
         mainFrame.getContentPane().add(drawPanel, BorderLayout.CENTER);
 
         visTrue(mainFrame);
@@ -53,6 +60,22 @@ public class Mechanic {
         new GameLoop().start();
 
         mainMenu();
+
+        /* Ideas:
+        * Themes - light, dark and colourful
+        * Drawing instruments:
+        *   Dot
+        *   Brush
+        *   Line (straight with Shift)
+        *   Rectangle (square with Shift)
+        *   Ruler (measures and prolongs the distance in squares)
+        *   Copy and paste
+        *   Reset to the position before the start
+        * Templates (can be placed like one dot):
+        *   Glider
+        *   Lightweight spaceship
+        * Types of cells:
+        *   Cells which cannot be destroyed (immune cells) */
     }
 
     static void mainMenu() {
@@ -67,6 +90,8 @@ public class Mechanic {
             visTrue(buttonSpeedPlus);
             visTrue(buttonSpeedMinus);
             visTrue(labelScale);
+            visTrue(buttonScalePlus);
+            visTrue(buttonScaleMinus);
         }
     }
 
@@ -79,16 +104,18 @@ public class Mechanic {
         visFalse(buttonSpeedPlus);
         visFalse(buttonSpeedMinus);
         visFalse(labelScale);
+        visFalse(buttonScalePlus);
+        visFalse(buttonScaleMinus);
     }
 
     public static void start() {
         if (started) {
             buttonStart.setText("Run");
-            buttonStart.setBackground(new Color(0x7236EE00, true));
+            buttonStart.setForeground(new Color(0xFF05FF00, true));
             started = false;
         } else {
             buttonStart.setText("Stop");
-            buttonStart.setBackground(new Color(0x72EE0000, true));
+            buttonStart.setForeground(new Color(0xFFFF2525, true));
             started = true;
         }
     }
@@ -105,9 +132,9 @@ public class Mechanic {
 
                 handleInput();
 
-                while (steps >= 1000d / 30) {
+                while (steps >= millisecondsPerUpdate) {
                     updateGameStats();
-                    steps -= 1000d / 30;
+                    steps -= millisecondsPerUpdate;
                 }
 
                 mainFrame.repaint();
@@ -120,7 +147,6 @@ public class Mechanic {
                     } catch (InterruptedException ignored) { }
                 }
                 iterationForNextStep++;
-//                iterationForMove++;
             }
         }
         public void handleInput() {
@@ -154,117 +180,118 @@ public class Mechanic {
                 double x = ((mouseX-6)-cameraCenterCellX*cameraScalePixelsPerCell-cameraCenterCellDoubleX-(double)(mainFrame.getWidth())/2)/cameraScalePixelsPerCell;
                 double y = ((mouseY-29)-cameraCenterCellY*cameraScalePixelsPerCell-cameraCenterCellDoubleY-(double)(mainFrame.getHeight())/2)/cameraScalePixelsPerCell;
 
-                if (x < 0 && y < 0) {
+                if (x < 0)
                     x--;
+                if (y < 0)
                     y--;
-                } else if (x < 0) {
-                    x--;
-                } else if (y < 0) {
-                    y--;
-                }
 
-                int[] ints = {(int) x, (int) y};
+                int finalX = (int) x;
+                int finalY = (int) y;
 
-                boolean isContain = false;
-                for (Map.Entry<String, String> elSet : listOfAliveCells.entrySet()) {
-                    if (ints[0] == Integer.parseInt(elSet.getKey().split("_")[0]) && ints[1] == Integer.parseInt(elSet.getKey().split("_")[1])) {
-                        isContain = true;
-                        break;
+                if (currentBrush == BRUSH_BRUSH) {
+                    if (!listOfAliveCells.containsKey((finalX+"_"+finalY).hashCode())) {
+                        listOfAliveCells.put((finalX+"_"+finalY).hashCode(), new Cell(finalX, finalY, currentCellBrush));
+                        System.out.println(finalX + " " + finalY + " " + (finalX+"_"+finalY).hashCode() + "  " + listOfAliveCells.keySet());
                     }
-                }
-                if (!isContain) {
-                    listOfAliveCells.put(ints[0]+"_"+ints[1], "");
+                } else if (currentBrush == BRUSH_GLIDER) {
+                    if (!listOfAliveCells.containsKey(((finalX-1)+"_"+finalY).hashCode()) &&
+                            !listOfAliveCells.containsKey((finalX+"_"+(finalY+1)).hashCode()) &&
+                            !listOfAliveCells.containsKey(((finalX+1)+"_"+(finalY+1)).hashCode()) &&
+                            !listOfAliveCells.containsKey(((finalX+1)+"_"+finalY).hashCode()) &&
+                            !listOfAliveCells.containsKey(((finalX+1)+"_"+(finalY-1)).hashCode())) {
+                        listOfAliveCells.put(((finalX-1)+"_"+finalY).hashCode(), new Cell(finalX-1, finalY, currentCellBrush));
+                        listOfAliveCells.put((finalX+"_"+(finalY+1)).hashCode(), new Cell(finalX, finalY+1, currentCellBrush));
+                        listOfAliveCells.put(((finalX+1)+"_"+(finalY+1)).hashCode(), new Cell(finalX+1, finalY+1, currentCellBrush));
+                        listOfAliveCells.put(((finalX+1)+"_"+finalY).hashCode(), new Cell(finalX+1, finalY, currentCellBrush));
+                        listOfAliveCells.put(((finalX+1)+"_"+(finalY-1)).hashCode(), new Cell(finalX+1, finalY-1, currentCellBrush));
+                    }
                 }
             } else if (button3) {
                 double x = ((mouseX-6)-cameraCenterCellX*cameraScalePixelsPerCell-cameraCenterCellDoubleX-(double)(mainFrame.getWidth())/2)/cameraScalePixelsPerCell;
                 double y = ((mouseY-29)-cameraCenterCellY*cameraScalePixelsPerCell-cameraCenterCellDoubleY-(double)(mainFrame.getHeight())/2)/cameraScalePixelsPerCell;
 
-                if (x < 0 && y < 0) {
+                if (x < 0)
                     x--;
+                if (y < 0)
                     y--;
-                } else if (x < 0) {
-                    x--;
-                } else if (y < 0) {
-                    y--;
-                }
 
-                int[] ints = {(int) x, (int) y};
+                int finalX = (int) x;
+                int finalY = (int) y;
 
-                for (Map.Entry<String, String> elSet : listOfAliveCells.entrySet()) {
-                    if (ints[0] == Integer.parseInt(elSet.getKey().split("_")[0]) && ints[1] == Integer.parseInt(elSet.getKey().split("_")[1])) {
-                        listOfAliveCells.remove(elSet.getKey());
-                        break;
-                    }
+                if (listOfAliveCells.containsKey((finalX+"_"+finalY).hashCode())) {
+                    listOfAliveCells.remove((finalX + "_" + finalY).hashCode());
+                    System.out.println((finalX+"_"+finalY).hashCode() + " removed");
                 }
             }
         }
         public void updateGameStats() {
-            if (((started && speedMilliseconds < iterationForNextStep * (1000d / 30))) || numOfNextSteps > 0) {
+            if (((started && speedMilliseconds < iterationForNextStep * (millisecondsPerUpdate))) || numOfNextSteps > 0) {
                 iterationGoing = true;
-                LinkedHashMap<String, String> listOfAliveCellsCopy = listOfAliveCells;
+                LinkedHashMap<Integer, Cell> listOfAliveCellsCopy = listOfAliveCells;
 
                 //removing alive cells with wrong number of neighbours.
-                ArrayList<int[]> listOfDeadCells = new ArrayList<>();
-                for (Map.Entry<String, String> cellsSet : listOfAliveCellsCopy.entrySet()) {
-                    int cellX = Integer.parseInt(cellsSet.getKey().split("_")[0]);
-                    int cellY = Integer.parseInt(cellsSet.getKey().split("_")[1]);
-                    int neighbours = returnNumberOfNeighbours(new int[]{cellX, cellY}, listOfAliveCellsCopy);
-                    if (!(neighbours >= lowestPossibleNeighbourNumberForAliveCell && neighbours <= highestPossibleNeighbourNumberForAliveCell)) {
-                        listOfDeadCells.add(new int[]{cellX, cellY});
+                ArrayList<Cell> listOfDeadCells = new ArrayList<>();
+                for (Map.Entry<Integer, Cell> aliveCellsSet : listOfAliveCellsCopy.entrySet()) {
+                    Cell cell = aliveCellsSet.getValue();
+                    if (cell.type == Cell.TYPE_COMMON) {
+                        int neighbours = returnNumberOfNeighbours(cell.x, cell.y, listOfAliveCellsCopy);
+                        if (!(neighbours >= lowestPossibleNeighbourNumberForAliveCell && neighbours <= highestPossibleNeighbourNumberForAliveCell)) {
+                            listOfDeadCells.add(cell);
+                        }
                     }
                 }
 
                 //adding new cells where it is right number of neighbours.
-                ArrayList<int[]> listOfNewCells = new ArrayList<>();
-                for (Map.Entry<String, String> cellsSet : listOfAliveCellsCopy.entrySet()) {
-                    int cellX = Integer.parseInt(cellsSet.getKey().split("_")[0]);
-                    int cellY = Integer.parseInt(cellsSet.getKey().split("_")[1]);
-                    System.out.println("Searching around cell: " + Arrays.toString(new int[]{cellX, cellY}));
+                LinkedHashMap<Integer, Cell> listOfNewCells = new LinkedHashMap<>();
+                for (Map.Entry<Integer, Cell> aliveCallsSet : listOfAliveCellsCopy.entrySet()) {
+                    Cell cell = aliveCallsSet.getValue();
+                    System.out.println("Searching around cell: " + Arrays.toString(new int[]{cell.x, cell.y}));
 
-                    if (checkForNewCell(listOfAliveCellsCopy, listOfNewCells, new int[]{cellX-1, cellY-1})) {
+                    if (checkForNewCell(listOfAliveCellsCopy, listOfNewCells, cell.x-1, cell.y-1)) {
                         System.out.println("Adding...");
-                        listOfNewCells.add(new int[]{cellX-1, cellY-1});
+                        listOfNewCells.put(((cell.x-1)+"_"+(cell.y-1)).hashCode(), new Cell(cell.x-1, cell.y-1, Cell.TYPE_COMMON));
                     }
-                    if (checkForNewCell(listOfAliveCellsCopy, listOfNewCells, new int[]{cellX+1, cellY-1})) {
+                    if (checkForNewCell(listOfAliveCellsCopy, listOfNewCells, cell.x+1, cell.y-1)) {
                         System.out.println("Adding...");
-                        listOfNewCells.add(new int[]{cellX+1, cellY-1});
+                        listOfNewCells.put(((cell.x+1)+"_"+(cell.y-1)).hashCode(), new Cell(cell.x+1, cell.y-1, Cell.TYPE_COMMON));
                     }
-                    if (checkForNewCell(listOfAliveCellsCopy, listOfNewCells, new int[]{cellX-1, cellY+1})) {
+                    if (checkForNewCell(listOfAliveCellsCopy, listOfNewCells, cell.x-1, cell.y+1)) {
                         System.out.println("Adding...");
-                        listOfNewCells.add(new int[]{cellX-1, cellY+1});
+                        listOfNewCells.put(((cell.x-1)+"_"+(cell.y+1)).hashCode(), new Cell(cell.x-1, cell.y+1, Cell.TYPE_COMMON));
                     }
-                    if (checkForNewCell(listOfAliveCellsCopy, listOfNewCells, new int[]{cellX+1, cellY+1})) {
+                    if (checkForNewCell(listOfAliveCellsCopy, listOfNewCells, cell.x+1, cell.y+1)) {
                         System.out.println("Adding...");
-                        listOfNewCells.add(new int[]{cellX+1, cellY+1});
+                        listOfNewCells.put(((cell.x+1)+"_"+(cell.y+1)).hashCode(), new Cell(cell.x+1, cell.y+1, Cell.TYPE_COMMON));
                     }
-                    if (checkForNewCell(listOfAliveCellsCopy, listOfNewCells, new int[]{cellX, cellY-1})) {
+                    if (checkForNewCell(listOfAliveCellsCopy, listOfNewCells, cell.x, cell.y-1)) {
                         System.out.println("Adding...");
-                        listOfNewCells.add(new int[]{cellX, cellY-1});
+                        listOfNewCells.put((cell.x+"_"+(cell.y-1)).hashCode(), new Cell(cell.x, cell.y-1, Cell.TYPE_COMMON));
                     }
-                    if (checkForNewCell(listOfAliveCellsCopy, listOfNewCells, new int[]{cellX, cellY+1})) {
+                    if (checkForNewCell(listOfAliveCellsCopy, listOfNewCells, cell.x, cell.y+1)) {
                         System.out.println("Adding...");
-                        listOfNewCells.add(new int[]{cellX, cellY+1});
+                        listOfNewCells.put((cell.x+"_"+(cell.y+1)).hashCode(), new Cell(cell.x, cell.y+1, Cell.TYPE_COMMON));
                     }
-                    if (checkForNewCell(listOfAliveCellsCopy, listOfNewCells, new int[]{cellX-1, cellY})) {
+                    if (checkForNewCell(listOfAliveCellsCopy, listOfNewCells, cell.x-1, cell.y)) {
                         System.out.println("Adding...");
-                        listOfNewCells.add(new int[]{cellX-1, cellY});
+                        listOfNewCells.put(((cell.x-1)+"_"+cell.y).hashCode(), new Cell(cell.x-1, cell.y, Cell.TYPE_COMMON));
                     }
-                    if (checkForNewCell(listOfAliveCellsCopy, listOfNewCells, new int[]{cellX+1, cellY})) {
+                    if (checkForNewCell(listOfAliveCellsCopy, listOfNewCells, cell.x+1, cell.y)) {
                         System.out.println("Adding...");
-                        listOfNewCells.add(new int[]{cellX+1, cellY});
+                        listOfNewCells.put(((cell.x+1)+"_"+cell.y).hashCode(), new Cell(cell.x+1, cell.y, Cell.TYPE_COMMON));
                     }
                     System.out.println("--------------------------------");
                 }
 
 
                 if (!listOfDeadCells.isEmpty()) {
-                    for (int[] listSet : listOfDeadCells)
-                        listOfAliveCellsCopy.remove(listSet[0]+"_"+listSet[1]);
+                    for (Cell cell : listOfDeadCells)
+                        listOfAliveCellsCopy.remove((cell.x+"_"+cell.y).hashCode());
                 }
                 if (!listOfNewCells.isEmpty()) {
-                    for (int[] listSet : listOfNewCells) {
-                        listOfAliveCellsCopy.put(listSet[0] + "_" + listSet[1], "");
-                        System.out.println(listSet[0] + "_" + listSet[1] + " was added to the list of alive cells");
+                    for (Map.Entry<Integer, Cell> newCellsSet : listOfNewCells.entrySet()) {
+                        Cell cell = newCellsSet.getValue();
+                        listOfAliveCellsCopy.put((cell.x+"_"+cell.y).hashCode(), cell);
+                        System.out.println(cell.x + "_" + cell.y + " was added to the list of alive cells");
                     }
                 }
 
@@ -282,33 +309,33 @@ public class Mechanic {
             }
         }
 
-        public int returnNumberOfNeighbours(int[] ints, LinkedHashMap<String, String> listOfAliveCellsCopy) {
+        public int returnNumberOfNeighbours(int x, int y, LinkedHashMap<Integer, Cell> listOfAliveCellsCopy) {
             int neighbours = 0;
 
-            if (listOfAliveCellsCopy.containsKey((ints[0]-1)+"_"+(ints[1]-1)))
+            if (listOfAliveCellsCopy.containsKey(((x-1)+"_"+(y-1)).hashCode()))
                 neighbours++;
-            if (listOfAliveCellsCopy.containsKey((ints[0]+1)+"_"+(ints[1]-1)))
+            if (listOfAliveCellsCopy.containsKey(((x+1)+"_"+(y-1)).hashCode()))
                 neighbours++;
-            if (listOfAliveCellsCopy.containsKey((ints[0]-1)+"_"+(ints[1]+1)))
+            if (listOfAliveCellsCopy.containsKey(((x-1)+"_"+(y+1)).hashCode()))
                 neighbours++;
-            if (listOfAliveCellsCopy.containsKey((ints[0]+1)+"_"+(ints[1]+1)))
+            if (listOfAliveCellsCopy.containsKey(((x+1)+"_"+(y+1)).hashCode()))
                 neighbours++;
-            if (listOfAliveCellsCopy.containsKey((ints[0])+"_"+(ints[1]-1)))
+            if (listOfAliveCellsCopy.containsKey((x+"_"+(y-1)).hashCode()))
                 neighbours++;
-            if (listOfAliveCellsCopy.containsKey((ints[0])+"_"+(ints[1]+1)))
+            if (listOfAliveCellsCopy.containsKey((x+"_"+(y+1)).hashCode()))
                 neighbours++;
-            if (listOfAliveCellsCopy.containsKey((ints[0]-1)+"_"+(ints[1])))
+            if (listOfAliveCellsCopy.containsKey(((x-1)+"_"+y).hashCode()))
                 neighbours++;
-            if (listOfAliveCellsCopy.containsKey((ints[0]+1)+"_"+(ints[1])))
+            if (listOfAliveCellsCopy.containsKey(((x+1)+"_"+y).hashCode()))
                 neighbours++;
 
+            System.out.println("Searching neighbours ended. " + x + " " + y + " has " + neighbours + " neighbours");
             return neighbours;
         }
 
-        public boolean checkForNewCell(LinkedHashMap<String, String> listOfAliveCellsCopy, ArrayList<int[]> listOfNewCells, int[] searchCell) {
-            System.out.println("Checking for new cell: " + Arrays.toString(searchCell));
-            if (!listOfAliveCellsCopy.containsKey(searchCell[0]+"_"+searchCell[1]) && !listOfNewCells.contains(searchCell)) {
-                return returnNumberOfNeighbours(searchCell, listOfAliveCellsCopy) == neighbourNumberForNewCell;
+        public boolean checkForNewCell(LinkedHashMap<Integer, Cell> listOfAliveCellsCopy, LinkedHashMap<Integer, Cell> listOfNewCells, int x, int y) {
+            if (!listOfAliveCellsCopy.containsKey((x+"_"+y).hashCode()) && !listOfNewCells.containsKey((x+"_"+y).hashCode())) {
+                return returnNumberOfNeighbours(x, y, listOfAliveCellsCopy) == neighbourNumberForNewCell;
             }
             return false;
         }
